@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV読み込みテスト</title>
+</head>
+<body>
+    <h1>CSV読み込みテスト</h1>
+    <button onclick="testLoadCSV()">CSVを読み込んでテスト</button>
+    <pre id="output"></pre>
+
+    <script src="data_all_patterns.js"></script>
+    <script>
+        // CSVパース関数
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            
+            return result;
+        }
+
+        // CSV読み込み関数
+        async function loadFormationCSV() {
+            try {
+                const response = await fetch('formation_all.csv');
+                const csvText = await response.text();
+                const lines = csvText.split('\n');
+                
+                const allData = {};
+                
+                for (let i = 1; i < lines.length; i++) {
+                    if (!lines[i].trim()) continue;
+                    
+                    const values = parseCSVLine(lines[i]);
+                    if (values.length < 13) continue;
+                    
+                    const runner = values[0];
+                    const play = values[1];
+                    const condition = values[2];
+                    
+                    // キーを生成
+                    let key = play.toLowerCase().replace(/[（）()]/g, '_').replace(/\s+/g, '_');
+                    
+                    const data = {
+                        id: key,
+                        name: play,
+                        runner: runner,
+                        play: play,
+                        condition: condition,
+                        imageUrl: values[12],
+                        articleUrl: values[11]
+                    };
+                    
+                    // 走者状況をキーに変換
+                    const runnerKey = runnerKeyMap[runner] || runner;
+                    if (!allData[runnerKey]) {
+                        allData[runnerKey] = {};
+                    }
+                    
+                    allData[runnerKey][key] = data;
+                }
+                
+                return allData;
+            } catch (error) {
+                console.error('CSV読み込みエラー:', error);
+                return null;
+            }
+        }
+
+        // テスト実行
+        async function testLoadCSV() {
+            const output = document.getElementById('output');
+            output.textContent = 'CSV読み込み中...';
+            
+            const data = await loadFormationCSV();
+            
+            if (!data) {
+                output.textContent = 'CSV読み込み失敗';
+                return;
+            }
+            
+            // 結果を整形して表示
+            let result = '=== CSV読み込み結果 ===\n\n';
+            result += `総走者パターン数: ${Object.keys(data).length}\n\n`;
+            
+            for (const [runnerKey, patterns] of Object.entries(data)) {
+                result += `【${runnerKey}】: ${Object.keys(patterns).length}パターン\n`;
+                
+                // 最初の3パターンを表示
+                const patternKeys = Object.keys(patterns).slice(0, 3);
+                patternKeys.forEach(key => {
+                    const pattern = patterns[key];
+                    result += `  - ${pattern.play}`;
+                    if (pattern.condition) {
+                        result += ` (${pattern.condition})`;
+                    }
+                    result += `\n`;
+                });
+                
+                if (Object.keys(patterns).length > 3) {
+                    result += `  ... 他${Object.keys(patterns).length - 3}パターン\n`;
+                }
+                result += '\n';
+            }
+            
+            output.textContent = result;
+            
+            // コンソールにも出力
+            console.log('CSV Data:', data);
+        }
+    </script>
+</body>
+</html>

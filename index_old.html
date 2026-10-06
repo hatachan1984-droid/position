@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚾ 寺町トンネルズ 守備フォーメーション学習</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムスタイル */
+        :root {
+            --team-blue: #2563eb;
+            --team-blue-dark: #1e40af;
+            --team-blue-light: #3b82f6;
+        }
+        
+        body {
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+            padding-bottom: 80px; /* ボトムナビ分の余白 */
+        }
+        
+        /* グラウンド用のスタイル */
+        .field-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        
+        @media (min-width: 640px) {
+            .field-container {
+                max-width: 400px;
+                padding: 20px;
+            }
+        }
+        
+        /* 野手アイコン */
+        .player-icon {
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .player-icon circle {
+            transition: fill 0.3s ease;
+        }
+        
+        .player-icon:hover circle {
+            fill: var(--team-blue-light);
+        }
+        
+        .player-icon.dimmed {
+            opacity: 0.3;
+        }
+        
+        .player-icon.highlighted circle {
+            fill: #fbbf24;
+            stroke: #f59e0b;
+            stroke-width: 3;
+        }
+        
+        /* ボトムナビゲーション */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 2px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #6b7280;
+        }
+        
+        .nav-item.active {
+            color: var(--team-blue);
+            font-weight: bold;
+        }
+        
+        .nav-item:hover {
+            background: #f3f4f6;
+        }
+        
+        /* ページセクション */
+        .page-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .page-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* ボタンスタイル */
+        .btn-primary {
+            background: var(--team-blue);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .btn-primary:hover {
+            background: var(--team-blue-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: var(--team-blue);
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 2px solid var(--team-blue);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        .btn-secondary:hover {
+            background: #eff6ff;
+        }
+        
+        /* カードスタイル */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+        }
+        
+        /* クイズスタイル */
+        .quiz-option {
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+        }
+        
+        .quiz-option:hover {
+            border-color: var(--team-blue);
+            background: #eff6ff;
+        }
+        
+        .quiz-option.correct {
+            border-color: #10b981;
+            background: #d1fae5;
+        }
+        
+        .quiz-option.incorrect {
+            border-color: #ef4444;
+            background: #fee2e2;
+        }
+        
+        /* ローディングアニメーション */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid var(--team-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 走者インジケーター */
+        .runner-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ef4444;
+            margin: 0 2px;
+        }
+        
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- ヘッダー -->
+    <header class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <h1 class="text-2xl font-bold text-center">⚾ 寺町トンネルズ</h1>
+            <p class="text-center text-sm mt-1 opacity-90">守備フォーメーション学習</p>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="container mx-auto px-4 py-6">
+        <!-- ログイン画面 -->
+        <div id="loginPage" class="page-section active">
+            <div class="max-w-md mx-auto mt-10">
+                <div class="card">
+                    <div class="text-center mb-6">
+                        <div class="text-6xl mb-3">⚾</div>
+                        <h2 class="text-2xl font-bold text-blue-600 mb-2">ようこそ！</h2>
+                        <p class="text-gray-600">ニックネームとポジションを選んでね！</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">ニックネーム</label>
+                        <input type="text" id="nicknameInput" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none" placeholder="例：たろう">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-bold mb-2">ポジション</label>
+                        <select id="positionSelect" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none">
+                            <option value="">選択してください</option>
+                            <option value="1">1. 投手 (P)</option>
+                            <option value="2">2. 捕手 (C)</option>
+                            <option value="3">3. 一塁手 (1B)</option>
+                            <option value="4">4. 二塁手 (2B)</option>
+                            <option value="5">5. 三塁手 (3B)</option>
+                            <option value="6">6. 遊撃手 (SS)</option>
+                            <option value="7">7. 左翼手 (LF)</option>
+                            <option value="8">8. 中堅手 (CF)</option>
+                            <option value="9">9. 右翼手 (RF)</option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="login()" class="btn-primary w-full">スタート！</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学習ページ -->
+        <div id="learningPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">📚 フォーメーション学習</h2>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-4 rounded">
+                <p class="text-sm text-blue-800">💡 <strong>使い方：</strong>走者状況を選んで「動きを見る」ボタンを押すと、各ポジションの動きがアニメーションで表示されます。</p>
+            </div>
+            
+            <!-- 走者状況選択 -->
+            <div class="card mb-6">
+                <label class="block text-gray-700 font-bold mb-3">走者状況を選択</label>
+                <select id="runnerSelect" onchange="changeRunner()" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none">
+                    <option value="none">走者なし</option>
+                    <option value="first">一塁</option>
+                    <option value="second">二塁</option>
+                    <option value="third">三塁</option>
+                    <option value="first_second">一二塁</option>
+                    <option value="first_third">一三塁</option>
+                    <option value="second_third">二三塁</option>
+                    <option value="loaded">満塁</option>
+                </select>
+            </div>
+            
+            <!-- グラウンド表示 -->
+            <div class="card">
+                <div class="field-container">
+                    <svg id="fieldSVG" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                        <!-- 外野エリア -->
+                        <rect x="0" y="0" width="400" height="200" fill="#86efac" opacity="0.3"/>
+                        <!-- 内野エリア -->
+                        <path d="M 200 350 L 50 200 L 200 50 L 350 200 Z" fill="#fde68a" opacity="0.4" stroke="#92400e" stroke-width="2"/>
+                        
+                        <!-- ベースライン -->
+                        <line x1="200" y1="350" x2="50" y2="200" stroke="#92400e" stroke-width="2"/>
+                        <line x1="200" y1="350" x2="350" y2="200" stroke="#92400e" stroke-width="2"/>
+                        <line x1="50" y1="200" x2="200" y2="50" stroke="#92400e" stroke-width="2"/>
+                        <line x1="350" y1="200" x2="200" y2="50" stroke="#92400e" stroke-width="2"/>
+                        
+                        <!-- ピッチャーマウンド -->
+                        <circle cx="200" cy="225" r="15" fill="#d97706" opacity="0.6"/>
+                        
+                        <!-- ベース -->
+                        <rect x="195" y="345" width="10" height="10" fill="white" stroke="#92400e" stroke-width="1"/> <!-- ホーム -->
+                        <rect x="345" y="195" width="10" height="10" fill="white" stroke="#92400e" stroke-width="1"/> <!-- 一塁 -->
+                        <rect x="195" y="45" width="10" height="10" fill="white" stroke="#92400e" stroke-width="1"/> <!-- 二塁 -->
+                        <rect x="45" y="195" width="10" height="10" fill="white" stroke="#92400e" stroke-width="1"/> <!-- 三塁 -->
+                        
+                        <!-- 走者インジケーター（初期は非表示） -->
+                        <circle id="runner1" cx="350" cy="200" r="8" fill="#ef4444" opacity="0" stroke="white" stroke-width="2"/>
+                        <circle id="runner2" cx="200" cy="50" r="8" fill="#ef4444" opacity="0" stroke="white" stroke-width="2"/>
+                        <circle id="runner3" cx="50" cy="200" r="8" fill="#ef4444" opacity="0" stroke="white" stroke-width="2"/>
+                        
+                        <!-- 野手アイコン（初期位置） -->
+                        <g id="player1" class="player-icon" data-position="1">
+                            <circle cx="200" cy="225" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="200" y="231" text-anchor="middle" fill="white" font-size="13" font-weight="bold">P</text>
+                        </g>
+                        
+                        <g id="player2" class="player-icon" data-position="2">
+                            <circle cx="200" cy="360" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="200" y="366" text-anchor="middle" fill="white" font-size="13" font-weight="bold">C</text>
+                        </g>
+                        
+                        <g id="player3" class="player-icon" data-position="3">
+                            <circle cx="320" cy="240" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="320" y="246" text-anchor="middle" fill="white" font-size="12" font-weight="bold">1B</text>
+                        </g>
+                        
+                        <g id="player4" class="player-icon" data-position="4">
+                            <circle cx="270" cy="150" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="270" y="156" text-anchor="middle" fill="white" font-size="12" font-weight="bold">2B</text>
+                        </g>
+                        
+                        <g id="player5" class="player-icon" data-position="5">
+                            <circle cx="80" cy="240" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="80" y="246" text-anchor="middle" fill="white" font-size="12" font-weight="bold">3B</text>
+                        </g>
+                        
+                        <g id="player6" class="player-icon" data-position="6">
+                            <circle cx="130" cy="150" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="130" y="156" text-anchor="middle" fill="white" font-size="12" font-weight="bold">SS</text>
+                        </g>
+                        
+                        <g id="player7" class="player-icon" data-position="7">
+                            <circle cx="80" cy="80" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="80" y="86" text-anchor="middle" fill="white" font-size="12" font-weight="bold">LF</text>
+                        </g>
+                        
+                        <g id="player8" class="player-icon" data-position="8">
+                            <circle cx="200" cy="60" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="200" y="66" text-anchor="middle" fill="white" font-size="12" font-weight="bold">CF</text>
+                        </g>
+                        
+                        <g id="player9" class="player-icon" data-position="9">
+                            <circle cx="320" cy="80" r="20" fill="#2563eb" stroke="white" stroke-width="2.5"/>
+                            <text x="320" y="86" text-anchor="middle" fill="white" font-size="12" font-weight="bold">RF</text>
+                        </g>
+                    </svg>
+                </div>
+                
+                <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:gap-2 sm:justify-center">
+                    <button onclick="showFormation()" class="btn-primary flex-1 sm:flex-none">▶️ 動きを見る</button>
+                    <button onclick="resetFormation()" class="btn-secondary flex-1 sm:flex-none">🔄 リセット</button>
+                </div>
+            </div>
+            
+            <!-- ポジション説明 -->
+            <div class="card mt-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">📝 各ポジションの役割</h3>
+                <div id="positionDescriptions" class="space-y-2 text-sm">
+                    <!-- JavaScriptで動的に生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ポジション別ページ -->
+        <div id="positionPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">🎯 ポジション別学習</h2>
+            
+            <div class="card mb-4 bg-gradient-to-r from-blue-50 to-yellow-50">
+                <p class="text-gray-700 mb-2">あなたのポジション：<span id="yourPosition" class="font-bold text-blue-600"></span></p>
+                <p class="text-sm text-gray-600">走者状況ごとにあなたの動きを集中的に学習できます。「動きを確認」ボタンで詳しく見てみよう！</p>
+            </div>
+            
+            <div id="positionLearningList">
+                <!-- JavaScriptで各走者パターンのカードを生成 -->
+            </div>
+        </div>
+
+        <!-- クイズページ -->
+        <div id="quizPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">🧠 クイズモード</h2>
+            
+            <div class="bg-green-50 border-l-4 border-green-600 p-4 mb-4 rounded">
+                <p class="text-sm text-green-800">🎯 <strong>チャレンジ：</strong>走者状況と各ポジションの役割を4択クイズで確認しよう！全10問出題されます。</p>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-600">正解数</p>
+                        <p class="text-2xl font-bold text-green-600"><span id="quizScore">0</span> / <span id="quizTotal">0</span></p>
+                    </div>
+                    <button onclick="startQuiz()" class="btn-primary">クイズスタート</button>
+                </div>
+            </div>
+            
+            <div id="quizContainer">
+                <!-- JavaScriptでクイズを生成 -->
+            </div>
+        </div>
+
+        <!-- マイページ -->
+        <div id="myPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">👤 マイページ</h2>
+            
+            <div class="card mb-4 bg-gradient-to-br from-blue-50 to-blue-100">
+                <div class="text-center mb-4">
+                    <div class="text-6xl mb-2">⚾</div>
+                    <h3 class="text-lg font-bold text-gray-800">プロフィール</h3>
+                </div>
+                <div class="space-y-3">
+                    <div class="bg-white p-3 rounded-lg">
+                        <p class="text-sm text-gray-600">ニックネーム</p>
+                        <p id="profileNickname" class="font-bold text-xl text-blue-600"></p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg">
+                        <p class="text-sm text-gray-600">ポジション</p>
+                        <p id="profilePosition" class="font-bold text-xl text-blue-600"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">📊 学習記録</h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-green-50 p-4 rounded-lg text-center border-2 border-green-200">
+                        <p class="text-sm text-gray-600 mb-1">正解率</p>
+                        <p id="quizAccuracy" class="font-bold text-3xl text-green-600"></p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg text-center border-2 border-blue-200">
+                        <p class="text-sm text-gray-600 mb-1">クイズ数</p>
+                        <p id="totalQuizzes" class="font-bold text-3xl text-blue-600"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="logout()" class="btn-secondary w-full">ログアウト</button>
+        </div>
+
+        <!-- 管理者ページ -->
+        <div id="adminPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4">👨‍💼 管理者ページ</h2>
+            
+            <div id="adminLogin" class="card">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">管理者認証</h3>
+                <input type="password" id="adminPassword" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg mb-3" placeholder="パスワードを入力">
+                <button onclick="adminLogin()" class="btn-primary w-full">ログイン</button>
+            </div>
+            
+            <div id="adminContent" style="display: none;">
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3">全ユーザー進捗一覧</h3>
+                    <div id="userProgressList" class="space-y-2">
+                        <!-- JavaScriptで生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ボトムナビゲーション -->
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchPage('learning')">
+            <div class="text-2xl">📚</div>
+            <div class="text-xs mt-1">学習</div>
+        </div>
+        <div class="nav-item" onclick="switchPage('position')">
+            <div class="text-2xl">🎯</div>
+            <div class="text-xs mt-1">ポジション別</div>
+        </div>
+        <div class="nav-item" onclick="switchPage('quiz')">
+            <div class="text-2xl">🧠</div>
+            <div class="text-xs mt-1">クイズ</div>
+        </div>
+        <div class="nav-item" onclick="switchPage('my')">
+            <div class="text-2xl">👤</div>
+            <div class="text-xs mt-1">マイページ</div>
+        </div>
+    </nav>
+
+    <script>
+        // グローバル変数
+        let currentUser = null;
+        let currentRunner = 'none';
+        let quizData = [];
+        let currentQuizIndex = 0;
+        let quizResults = [];
+
+        // ポジション定義
+        const positions = {
+            1: { name: '投手', abbr: 'P', full: '投手 (P)' },
+            2: { name: '捕手', abbr: 'C', full: '捕手 (C)' },
+            3: { name: '一塁手', abbr: '1B', full: '一塁手 (1B)' },
+            4: { name: '二塁手', abbr: '2B', full: '二塁手 (2B)' },
+            5: { name: '三塁手', abbr: '3B', full: '三塁手 (3B)' },
+            6: { name: '遊撃手', abbr: 'SS', full: '遊撃手 (SS)' },
+            7: { name: '左翼手', abbr: 'LF', full: '左翼手 (LF)' },
+            8: { name: '中堅手', abbr: 'CF', full: '中堅手 (CF)' },
+            9: { name: '右翼手', abbr: 'RF', full: '右翼手 (RF)' }
+        };
+
+        // 走者パターン定義
+        const runnerPatterns = {
+            none: { name: '走者なし', runners: [] },
+            first: { name: '一塁', runners: [1] },
+            second: { name: '二塁', runners: [2] },
+            third: { name: '三塁', runners: [3] },
+            first_second: { name: '一二塁', runners: [1, 2] },
+            first_third: { name: '一三塁', runners: [1, 3] },
+            second_third: { name: '二三塁', runners: [2, 3] },
+            loaded: { name: '満塁', runners: [1, 2, 3] }
+        };
+
+        // フォーメーションデータ（走者パターン別の各ポジションの位置と説明）
+        const formationData = {
+            none: {
+                positions: {
+                    1: { x: 200, y: 225, desc: 'マウンド中央で投球準備' },
+                    2: { x: 200, y: 360, desc: 'ホームベース後方で捕球態勢' },
+                    3: { x: 320, y: 240, desc: '一塁ベース近くで守備' },
+                    4: { x: 270, y: 150, desc: '一二塁間で守備' },
+                    5: { x: 80, y: 240, desc: '三塁ベース近くで守備' },
+                    6: { x: 130, y: 150, desc: '二三塁間で守備' },
+                    7: { x: 80, y: 80, desc: '左翼の定位置で守備' },
+                    8: { x: 200, y: 60, desc: '中堅の定位置で守備' },
+                    9: { x: 320, y: 80, desc: '右翼の定位置で守備' }
+                }
+            },
+            first: {
+                positions: {
+                    1: { x: 200, y: 225, desc: '一塁への牽制に備える' },
+                    2: { x: 200, y: 360, desc: '盗塁に備えて二塁送球準備' },
+                    3: { x: 340, y: 210, desc: '一塁ベースに近づき牽制カバー' },
+                    4: { x: 260, y: 140, desc: '二塁ベースカバーに備える' },
+                    5: { x: 80, y: 240, desc: '三塁方向の打球に備える' },
+                    6: { x: 140, y: 140, desc: '二塁ベースカバーに備える' },
+                    7: { x: 80, y: 80, desc: '左翼の定位置で長打に備える' },
+                    8: { x: 200, y: 60, desc: '中堅の定位置で長打に備える' },
+                    9: { x: 320, y: 80, desc: '右翼の定位置で長打に備える' }
+                }
+            },
+            second: {
+                positions: {
+                    1: { x: 200, y: 225, desc: '三塁への進塁を防ぐ' },
+                    2: { x: 200, y: 360, desc: 'ホームでの刺殺に備える' },
+                    3: { x: 320, y: 240, desc: '一塁方向の打球に備える' },
+                    4: { x: 260, y: 140, desc: '二塁ベースカバー' },
+                    5: { x: 80, y: 240, desc: '三塁方向の打球に備える' },
+                    6: { x: 140, y: 140, desc: '二塁ベースカバー' },
+                    7: { x: 80, y: 80, desc: '左翼定位置、本塁送球に備える' },
+                    8: { x: 200, y: 60, desc: '中堅定位置、本塁送球に備える' },
+                    9: { x: 320, y: 80, desc: '右翼定位置、本塁送球に備える' }
+                }
+            },
+            third: {
+                positions: {
+                    1: { x: 200, y: 225, desc: 'ホームへの進塁阻止' },
+                    2: { x: 200, y: 360, desc: '本塁でのタッチプレー準備' },
+                    3: { x: 300, y: 260, desc: '前進守備、本塁送球準備' },
+                    4: { x: 250, y: 170, desc: '前進守備、本塁送球準備' },
+                    5: { x: 100, y: 260, desc: '前進守備、本塁送球準備' },
+                    6: { x: 150, y: 170, desc: '前進守備、本塁送球準備' },
+                    7: { x: 80, y: 100, desc: '浅めの左翼、犠牲フライ阻止' },
+                    8: { x: 200, y: 80, desc: '浅めの中堅、犠牲フライ阻止' },
+                    9: { x: 320, y: 100, desc: '浅めの右翼、犠牲フライ阻止' }
+                }
+            },
+            first_second: {
+                positions: {
+                    1: { x: 200, y: 225, desc: 'ゲッツーを狙う' },
+                    2: { x: 200, y: 360, desc: 'ホームでの刺殺に備える' },
+                    3: { x: 335, y: 215, desc: '一塁ベースカバー、ゲッツー中継' },
+                    4: { x: 255, y: 135, desc: '二塁ベースカバー、ゲッツー' },
+                    5: { x: 80, y: 240, desc: '三塁方向の打球処理' },
+                    6: { x: 145, y: 135, desc: '二塁ベースカバー、ゲッツー' },
+                    7: { x: 80, y: 80, desc: '左翼定位置で守備' },
+                    8: { x: 200, y: 60, desc: '中堅定位置で守備' },
+                    9: { x: 320, y: 80, desc: '右翼定位置で守備' }
+                }
+            },
+            first_third: {
+                positions: {
+                    1: { x: 200, y: 225, desc: '三塁ランナーの動きに注意' },
+                    2: { x: 200, y: 360, desc: '本塁でのタッチプレー準備' },
+                    3: { x: 330, y: 220, desc: '一塁ベースカバー' },
+                    4: { x: 260, y: 160, desc: '二塁・本塁への中継' },
+                    5: { x: 90, y: 250, desc: '前めの守備、本塁送球準備' },
+                    6: { x: 140, y: 160, desc: '二塁・本塁への中継' },
+                    7: { x: 80, y: 90, desc: '浅めの左翼守備' },
+                    8: { x: 200, y: 70, desc: '浅めの中堅守備' },
+                    9: { x: 320, y: 90, desc: '浅めの右翼守備' }
+                }
+            },
+            second_third: {
+                positions: {
+                    1: { x: 200, y: 225, desc: '得点阻止を最優先' },
+                    2: { x: 200, y: 360, desc: '本塁でのタッチプレー準備' },
+                    3: { x: 300, y: 260, desc: '前進守備、本塁送球' },
+                    4: { x: 250, y: 170, desc: '前進守備、本塁送球' },
+                    5: { x: 100, y: 260, desc: '前進守備、本塁送球' },
+                    6: { x: 150, y: 170, desc: '前進守備、本塁送球' },
+                    7: { x: 80, y: 100, desc: '浅めの左翼、犠牲フライ阻止' },
+                    8: { x: 200, y: 80, desc: '浅めの中堅、犠牲フライ阻止' },
+                    9: { x: 320, y: 100, desc: '浅めの右翼、犠牲フライ阻止' }
+                }
+            },
+            loaded: {
+                positions: {
+                    1: { x: 200, y: 225, desc: 'ホームフォースアウトを狙う' },
+                    2: { x: 200, y: 360, desc: '本塁フォースプレー準備' },
+                    3: { x: 310, y: 250, desc: '前進守備、本塁フォース送球' },
+                    4: { x: 250, y: 165, desc: '前進守備、本塁フォース送球' },
+                    5: { x: 90, y: 250, desc: '前進守備、本塁フォース送球' },
+                    6: { x: 150, y: 165, desc: '前進守備、本塁フォース送球' },
+                    7: { x: 80, y: 100, desc: '浅めの左翼、本塁送球' },
+                    8: { x: 200, y: 80, desc: '浅めの中堅、本塁送球' },
+                    9: { x: 320, y: 100, desc: '浅めの右翼、本塁送球' }
+                }
+            }
+        };
+
+        // 初期化
+        window.onload = function() {
+            // URLパラメータで管理者モードチェック
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('admin') === 'true') {
+                showAdminPage();
+            }
+            
+            // ログイン状態チェック
+            checkLoginStatus();
+        };
+
+        // ログイン状態チェック
+        function checkLoginStatus() {
+            const user = localStorage.getItem('currentUser');
+            if (user) {
+                currentUser = JSON.parse(user);
+                showMainApp();
+            } else {
+                document.getElementById('loginPage').classList.add('active');
+            }
+        }
+
+        // ログイン
+        function login() {
+            const nickname = document.getElementById('nicknameInput').value.trim();
+            const position = document.getElementById('positionSelect').value;
+            
+            if (!nickname) {
+                alert('ニックネームを入力してください');
+                return;
+            }
+            
+            if (!position) {
+                alert('ポジションを選択してください');
+                return;
+            }
+            
+            currentUser = {
+                nickname: nickname,
+                position: parseInt(position),
+                loginTime: new Date().toISOString(),
+                quizHistory: []
+            };
+            
+            // ユーザー情報を保存
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            
+            // ユーザーリストに追加
+            let users = JSON.parse(localStorage.getItem('allUsers') || '[]');
+            const existingIndex = users.findIndex(u => u.nickname === nickname);
+            if (existingIndex >= 0) {
+                users[existingIndex] = currentUser;
+            } else {
+                users.push(currentUser);
+            }
+            localStorage.setItem('allUsers', JSON.stringify(users));
+            
+            showMainApp();
+        }
+
+        // ログアウト
+        function logout() {
+            if (confirm('ログアウトしますか？')) {
+                localStorage.removeItem('currentUser');
+                currentUser = null;
+                location.reload();
+            }
+        }
+
+        // メインアプリ表示
+        function showMainApp() {
+            document.getElementById('loginPage').classList.remove('active');
+            document.getElementById('learningPage').classList.add('active');
+            
+            // プロフィール情報更新
+            updateProfile();
+            
+            // ポジション別学習ページ初期化
+            initPositionLearning();
+            
+            // 初期フォーメーション表示
+            updateRunnerIndicators();
+            updatePositionDescriptions();
+        }
+
+        // プロフィール更新
+        function updateProfile() {
+            document.getElementById('profileNickname').textContent = currentUser.nickname;
+            document.getElementById('profilePosition').textContent = positions[currentUser.position].full;
+            document.getElementById('yourPosition').textContent = positions[currentUser.position].full;
+            
+            // クイズ統計
+            const quizHistory = currentUser.quizHistory || [];
+            const totalQuizzes = quizHistory.length;
+            const correctAnswers = quizHistory.filter(q => q.correct).length;
+            const accuracy = totalQuizzes > 0 ? Math.round((correctAnswers / totalQuizzes) * 100) : 0;
+            
+            document.getElementById('quizAccuracy').textContent = `${accuracy}%`;
+            document.getElementById('totalQuizzes').textContent = `${totalQuizzes}問`;
+        }
+
+        // ページ切り替え
+        function switchPage(page) {
+            // 全ページを非表示
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            
+            // ナビゲーションアイテムの選択状態更新
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            
+            // 選択されたページを表示
+            switch(page) {
+                case 'learning':
+                    document.getElementById('learningPage').classList.add('active');
+                    document.querySelectorAll('.nav-item')[0].classList.add('active');
+                    break;
+                case 'position':
+                    document.getElementById('positionPage').classList.add('active');
+                    document.querySelectorAll('.nav-item')[1].classList.add('active');
+                    break;
+                case 'quiz':
+                    document.getElementById('quizPage').classList.add('active');
+                    document.querySelectorAll('.nav-item')[2].classList.add('active');
+                    loadQuizStats();
+                    break;
+                case 'my':
+                    document.getElementById('myPage').classList.add('active');
+                    document.querySelectorAll('.nav-item')[3].classList.add('active');
+                    updateProfile();
+                    break;
+            }
+        }
+
+        // 走者状況変更
+        function changeRunner() {
+            currentRunner = document.getElementById('runnerSelect').value;
+            resetFormation();
+            updateRunnerIndicators();
+            updatePositionDescriptions();
+        }
+
+        // 走者インジケーター更新
+        function updateRunnerIndicators() {
+            const pattern = runnerPatterns[currentRunner];
+            
+            // 全走者を非表示
+            document.getElementById('runner1').setAttribute('opacity', '0');
+            document.getElementById('runner2').setAttribute('opacity', '0');
+            document.getElementById('runner3').setAttribute('opacity', '0');
+            
+            // 該当する走者を表示
+            pattern.runners.forEach(base => {
+                document.getElementById(`runner${base}`).setAttribute('opacity', '1');
+            });
+        }
+
+        // フォーメーション表示
+        function showFormation() {
+            const formation = formationData[currentRunner];
+            
+            for (let pos = 1; pos <= 9; pos++) {
+                const player = document.getElementById(`player${pos}`);
+                const data = formation.positions[pos];
+                
+                // アニメーション用にtransformを設定
+                const currentCircle = player.querySelector('circle');
+                const currentX = parseFloat(currentCircle.getAttribute('cx'));
+                const currentY = parseFloat(currentCircle.getAttribute('cy'));
+                
+                const deltaX = data.x - currentX;
+                const deltaY = data.y - currentY;
+                
+                player.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            }
+        }
+
+        // フォーメーションリセット
+        function resetFormation() {
+            for (let pos = 1; pos <= 9; pos++) {
+                const player = document.getElementById(`player${pos}`);
+                player.style.transform = '';
+                player.classList.remove('dimmed', 'highlighted');
+            }
+        }
+
+        // ポジション説明更新
+        function updatePositionDescriptions() {
+            const container = document.getElementById('positionDescriptions');
+            const formation = formationData[currentRunner];
+            
+            let html = '';
+            for (let pos = 1; pos <= 9; pos++) {
+                const posData = positions[pos];
+                const formData = formation.positions[pos];
+                const isUserPosition = currentUser && currentUser.position === pos;
+                
+                html += `
+                    <div class="p-3 rounded-lg ${isUserPosition ? 'bg-yellow-50 border-2 border-yellow-400' : 'bg-gray-50'}">
+                        <span class="font-bold ${isUserPosition ? 'text-yellow-700' : 'text-blue-600'}">${posData.full}</span>
+                        ${isUserPosition ? '<span class="ml-2 text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded">あなた</span>' : ''}
+                        <p class="text-gray-700 mt-1">${formData.desc}</p>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // ポジション別学習初期化
+        function initPositionLearning() {
+            const container = document.getElementById('positionLearningList');
+            let html = '';
+            
+            Object.keys(runnerPatterns).forEach(key => {
+                const pattern = runnerPatterns[key];
+                const formation = formationData[key];
+                const userPosData = formation.positions[currentUser.position];
+                
+                html += `
+                    <div class="card">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">${pattern.name}</h3>
+                        <div class="flex items-center mb-2">
+                            ${pattern.runners.map(r => '<span class="runner-indicator"></span>').join('')}
+                            ${pattern.runners.length === 0 ? '<span class="text-sm text-gray-500">走者なし</span>' : ''}
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-lg border-2 border-blue-300">
+                            <p class="text-sm text-gray-600 mb-1">あなたの役割：</p>
+                            <p class="font-bold text-blue-700">${userPosData.desc}</p>
+                        </div>
+                        <button onclick="showPositionFormation('${key}')" class="btn-secondary w-full mt-3">動きを確認</button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // ポジション別フォーメーション表示
+        function showPositionFormation(runnerKey) {
+            // 学習ページに切り替え
+            switchPage('learning');
+            
+            // 走者状況を設定
+            document.getElementById('runnerSelect').value = runnerKey;
+            currentRunner = runnerKey;
+            
+            // 表示を更新
+            updateRunnerIndicators();
+            updatePositionDescriptions();
+            
+            // 自分のポジションをハイライト
+            resetFormation();
+            for (let pos = 1; pos <= 9; pos++) {
+                const player = document.getElementById(`player${pos}`);
+                if (pos === currentUser.position) {
+                    player.classList.add('highlighted');
+                } else {
+                    player.classList.add('dimmed');
+                }
+            }
+            
+            // フォーメーション表示
+            setTimeout(() => showFormation(), 300);
+        }
+
+        // クイズ開始
+        function startQuiz() {
+            // クイズデータ生成
+            quizData = generateQuizData();
+            currentQuizIndex = 0;
+            quizResults = [];
+            
+            showQuizQuestion();
+        }
+
+        // クイズデータ生成
+        function generateQuizData() {
+            const questions = [];
+            const runnerKeys = Object.keys(runnerPatterns);
+            
+            // 10問生成
+            for (let i = 0; i < 10; i++) {
+                const runnerKey = runnerKeys[Math.floor(Math.random() * runnerKeys.length)];
+                const position = Math.floor(Math.random() * 9) + 1;
+                
+                const formation = formationData[runnerKey];
+                const correctAnswer = formation.positions[position].desc;
+                
+                // 間違いの選択肢を生成
+                const wrongAnswers = [];
+                const allDescriptions = Object.values(formation.positions).map(p => p.desc);
+                const otherDescriptions = allDescriptions.filter(d => d !== correctAnswer);
+                
+                // ランダムに3つ選択
+                while (wrongAnswers.length < 3 && otherDescriptions.length > 0) {
+                    const idx = Math.floor(Math.random() * otherDescriptions.length);
+                    wrongAnswers.push(otherDescriptions.splice(idx, 1)[0]);
+                }
+                
+                // 選択肢をシャッフル
+                const options = [correctAnswer, ...wrongAnswers].sort(() => Math.random() - 0.5);
+                
+                questions.push({
+                    runner: runnerKey,
+                    runnerName: runnerPatterns[runnerKey].name,
+                    position: position,
+                    positionName: positions[position].full,
+                    correctAnswer: correctAnswer,
+                    options: options
+                });
+            }
+            
+            return questions;
+        }
+
+        // クイズ問題表示
+        function showQuizQuestion() {
+            if (currentQuizIndex >= quizData.length) {
+                showQuizResult();
+                return;
+            }
+            
+            const question = quizData[currentQuizIndex];
+            const container = document.getElementById('quizContainer');
+            
+            let html = `
+                <div class="card">
+                    <div class="mb-4">
+                        <span class="text-sm text-gray-600">問題 ${currentQuizIndex + 1} / ${quizData.length}</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        走者状況：${question.runnerName}<br>
+                        <span class="text-blue-600">${question.positionName}</span>の役割は？
+                    </h3>
+                    <div class="space-y-3">
+            `;
+            
+            question.options.forEach((option, idx) => {
+                html += `
+                    <div class="quiz-option" onclick="answerQuiz('${option}')">
+                        ${String.fromCharCode(65 + idx)}. ${option}
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        // クイズ回答
+        function answerQuiz(answer) {
+            const question = quizData[currentQuizIndex];
+            const isCorrect = answer === question.correctAnswer;
+            
+            // 結果を記録
+            quizResults.push({
+                question: question,
+                answer: answer,
+                correct: isCorrect
+            });
+            
+            // 視覚的フィードバック
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach(option => {
+                option.style.pointerEvents = 'none';
+                const text = option.textContent.substring(3).trim();
+                if (text === question.correctAnswer) {
+                    option.classList.add('correct');
+                } else if (text === answer && !isCorrect) {
+                    option.classList.add('incorrect');
+                }
+            });
+            
+            // 次の問題へ
+            setTimeout(() => {
+                currentQuizIndex++;
+                showQuizQuestion();
+            }, 1500);
+        }
+
+        // クイズ結果表示
+        function showQuizResult() {
+            const container = document.getElementById('quizContainer');
+            const correctCount = quizResults.filter(r => r.correct).length;
+            const totalCount = quizResults.length;
+            const accuracy = Math.round((correctCount / totalCount) * 100);
+            
+            // ユーザーのクイズ履歴に追加
+            quizResults.forEach(result => {
+                currentUser.quizHistory.push({
+                    timestamp: new Date().toISOString(),
+                    runner: result.question.runner,
+                    position: result.question.position,
+                    correct: result.correct
+                });
+            });
+            
+            // ローカルストレージ更新
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            let users = JSON.parse(localStorage.getItem('allUsers') || '[]');
+            const userIndex = users.findIndex(u => u.nickname === currentUser.nickname);
+            if (userIndex >= 0) {
+                users[userIndex] = currentUser;
+                localStorage.setItem('allUsers', JSON.stringify(users));
+            }
+            
+            let html = `
+                <div class="card text-center">
+                    <h3 class="text-2xl font-bold mb-4">クイズ結果</h3>
+                    <div class="text-6xl mb-4">${accuracy >= 80 ? '🎉' : accuracy >= 60 ? '👍' : '💪'}</div>
+                    <p class="text-4xl font-bold text-blue-600 mb-2">${correctCount} / ${totalCount}</p>
+                    <p class="text-xl text-gray-700 mb-6">正解率：${accuracy}%</p>
+                    <p class="text-gray-600 mb-6">
+                        ${accuracy >= 80 ? 'すばらしい！よくできました！' : 
+                          accuracy >= 60 ? 'いい感じです！もう少し！' : 
+                          'もう一度学習してみよう！'}
+                    </p>
+                    <button onclick="startQuiz()" class="btn-primary mb-3">もう一度挑戦</button>
+                    <button onclick="switchPage('learning')" class="btn-secondary">学習に戻る</button>
+                </div>
+                
+                <div class="card mt-4">
+                    <h4 class="font-bold text-gray-800 mb-3">結果詳細</h4>
+                    <div class="space-y-2 text-sm">
+            `;
+            
+            quizResults.forEach((result, idx) => {
+                html += `
+                    <div class="p-2 rounded ${result.correct ? 'bg-green-50' : 'bg-red-50'}">
+                        <div class="flex items-center">
+                            <span class="text-lg mr-2">${result.correct ? '✅' : '❌'}</span>
+                            <span class="font-bold">${idx + 1}. ${result.question.runnerName} - ${result.question.positionName}</span>
+                        </div>
+                        ${!result.correct ? `<p class="text-xs text-gray-600 mt-1 ml-7">正解：${result.question.correctAnswer}</p>` : ''}
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            
+            // 統計更新
+            loadQuizStats();
+        }
+
+        // クイズ統計読み込み
+        function loadQuizStats() {
+            const quizHistory = currentUser.quizHistory || [];
+            const totalQuizzes = quizHistory.length;
+            const correctAnswers = quizHistory.filter(q => q.correct).length;
+            
+            document.getElementById('quizScore').textContent = correctAnswers;
+            document.getElementById('quizTotal').textContent = totalQuizzes;
+        }
+
+        // 管理者ページ表示
+        function showAdminPage() {
+            switchPage('learning');
+            document.getElementById('adminPage').classList.add('active');
+            document.querySelector('.bottom-nav').style.display = 'none';
+        }
+
+        // 管理者ログイン
+        function adminLogin() {
+            const password = document.getElementById('adminPassword').value;
+            
+            if (password === 'tunnels2024') {
+                document.getElementById('adminLogin').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                loadUserProgress();
+            } else {
+                alert('パスワードが間違っています');
+            }
+        }
+
+        // ユーザー進捗読み込み
+        function loadUserProgress() {
+            const users = JSON.parse(localStorage.getItem('allUsers') || '[]');
+            const container = document.getElementById('userProgressList');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">まだユーザーがいません</p>';
+                return;
+            }
+            
+            let html = '<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-gray-100"><tr><th class="p-2 text-left">ニックネーム</th><th class="p-2 text-left">ポジション</th><th class="p-2 text-left">クイズ数</th><th class="p-2 text-left">正解率</th><th class="p-2 text-left">最終ログイン</th></tr></thead><tbody>';
+            
+            users.forEach(user => {
+                const quizHistory = user.quizHistory || [];
+                const totalQuizzes = quizHistory.length;
+                const correctAnswers = quizHistory.filter(q => q.correct).length;
+                const accuracy = totalQuizzes > 0 ? Math.round((correctAnswers / totalQuizzes) * 100) : 0;
+                const lastLogin = new Date(user.loginTime).toLocaleDateString('ja-JP');
+                
+                html += `
+                    <tr class="border-b">
+                        <td class="p-2">${user.nickname}</td>
+                        <td class="p-2">${positions[user.position].full}</td>
+                        <td class="p-2">${totalQuizzes}問</td>
+                        <td class="p-2"><span class="font-bold ${accuracy >= 80 ? 'text-green-600' : accuracy >= 60 ? 'text-blue-600' : 'text-gray-600'}">${accuracy}%</span></td>
+                        <td class="p-2">${lastLogin}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寺町トンネルズ カバーリング学習</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --team-blue: #2563eb;
+            --team-blue-dark: #1e40af;
+            --team-blue-light: #3b82f6;
+            --ball-handler: #ef4444;
+            --cover: #2563eb;
+            --backup: #f59e0b;
+            --base-cover: #10b981;
+        }
+        
+        body {
+            font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+            padding-bottom: 80px;
+        }
+        
+        .field-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+            position: relative;
+        }
+        
+        @media (min-width: 640px) {
+            .field-container {
+                max-width: 500px;
+                padding: 20px;
+            }
+        }
+        
+        .player-icon {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .arrow {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .arrow.show {
+            opacity: 1;
+        }
+        
+        .arrow-solid {
+            stroke-dasharray: none;
+        }
+        
+        .arrow-dashed {
+            stroke-dasharray: 8, 4;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 2px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #6b7280;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .nav-item.active {
+            color: var(--team-blue);
+            font-weight: bold;
+        }
+        
+        .page-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .page-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .btn-primary {
+            background: var(--team-blue);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            white-space: nowrap; /* アイコンとテキストを同じ行に */
+        }
+        
+        .btn-primary:hover {
+            background: var(--team-blue-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: var(--team-blue);
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 2px solid var(--team-blue);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            white-space: nowrap; /* アイコンとテキストを同じ行に */
+        }
+        
+        .runner-btn, .ball-btn {
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            color: #374151;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 3px solid #e5e7eb;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            min-height: 56px; /* タップ領域確保 */
+            line-height: 1.4;
+            white-space: normal; /* 改行を許可 */
+            word-break: break-word; /* 長い単語は分割 */
+            overflow-wrap: break-word; /* 単語の折り返し */
+            hyphens: auto; /* 自動ハイフネーション */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            max-width: 100%; /* 親要素の幅を超えない */
+        }
+        
+        .runner-btn i, .ball-btn i {
+            font-size: 1.4em;
+            margin-bottom: 2px;
+        }
+        
+        /* スマホ対応：小さい画面では文字サイズを調整 */
+        @media (max-width: 640px) {
+            .runner-btn, .ball-btn {
+                font-size: 14px;
+                padding: 12px 14px;
+                min-height: 52px;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            .runner-btn, .ball-btn {
+                font-size: 13px;
+                padding: 10px 12px;
+                min-height: 48px;
+            }
+        }
+        
+        .runner-btn:hover, .ball-btn:hover {
+            border-color: var(--team-blue);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        }
+        
+        .runner-btn.selected, .ball-btn.selected {
+            background: linear-gradient(135deg, var(--team-blue) 0%, var(--team-blue-dark) 100%);
+            color: white;
+            border-color: var(--team-blue-dark);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+            transform: scale(1.05);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        
+        .role-ball-handler {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+        
+        .role-cover {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #2563eb;
+        }
+        
+        .role-backup {
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #f59e0b;
+        }
+        
+        .role-base-cover {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        
+        .role-wait {
+            background: #f3f4f6;
+            color: #4b5563;
+            border: 2px solid #9ca3af;
+        }
+        
+        /* ボタン内の括弧テキストを小さく表示 */
+        .ball-btn .bracket-text,
+        .runner-btn .bracket-text {
+            font-size: 0.8em;
+            opacity: 0.85;
+            font-weight: 600;
+        }
+        
+        /* さらに小さい画面では括弧をもっと小さく */
+        @media (max-width: 380px) {
+            .ball-btn .bracket-text,
+            .runner-btn .bracket-text {
+                font-size: 0.75em;
+                display: block; /* 括弧を別行に */
+                margin-top: 2px;
+            }
+        }
+        
+        .quiz-option {
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            user-select: none;
+            font-size: 15px;
+            line-height: 1.6;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            hyphens: auto;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            min-height: 56px; /* タップ領域確保 */
+            display: block; /* flexからblockに変更 */
+        }
+        
+        /* 選択肢内のinline-blockコンテナ */
+        .quiz-option .inline-block {
+            display: inline;
+        }
+        
+        /* クイズオプション内の括弧テキストを小さく */
+        .quiz-option .bracket-text {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+        
+        /* スマホ対応：クイズオプションの文字サイズ調整 */
+        @media (max-width: 640px) {
+            .quiz-option {
+                padding: 14px;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+            
+            .quiz-option .bracket-text {
+                font-size: 0.8em;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            .quiz-option {
+                padding: 12px 10px;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+            
+            .quiz-option .bracket-text {
+                font-size: 0.75em;
+                display: block; /* 括弧を別行に */
+                margin-top: 2px;
+            }
+        }
+        
+        .quiz-option:hover {
+            border-color: var(--team-blue);
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+        }
+        
+        .quiz-option:active {
+            transform: translateY(0) scale(0.99);
+        }
+        
+        .quiz-option.correct {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-width: 3px;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+            animation: correctPulse 0.5s ease-out;
+        }
+        
+        .quiz-option.incorrect {
+            border-color: #ef4444;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-width: 3px;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+            animation: shake 0.5s ease-out;
+        }
+        
+        @keyframes correctPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        
+        /* フォーメーション画像のスタイル - 角丸を完全に削除して端が切れないようにする */
+        #formationImage,
+        #quizFormationImage {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            max-width: 100%;
+            border: none;
+            border-radius: 0;
+        }
+        
+        /* 画像コンテナ - シンプルな白背景と影のみ */
+        #formationImageContainer .image-wrapper,
+        #quizImageContainer .image-wrapper {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 8px;
+            border-radius: 0; /* 角丸なしで画像の端が切れないようにする */
+        }
+        
+        @media (max-width: 640px) {
+            #formationImageContainer .image-wrapper,
+            #quizImageContainer .image-wrapper {
+                padding: 6px;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            #formationImageContainer .image-wrapper,
+            #quizImageContainer .image-wrapper {
+                padding: 4px;
+            }
+        }
+        
+        /* クイズコンテナのスマホ対応 */
+        #quizContainer {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        #quizContainer .card {
+            padding: 16px;
+        }
+        
+        @media (max-width: 640px) {
+            #quizContainer .card {
+                padding: 14px;
+            }
+            
+            #quizContainer h3 {
+                font-size: 1.1rem;
+                line-height: 1.4;
+            }
+        }
+        
+        @media (max-width: 380px) {
+            #quizContainer .card {
+                padding: 12px;
+            }
+            
+            #quizContainer h3 {
+                font-size: 1rem;
+                line-height: 1.3;
+            }
+        }
+        
+        .situation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .legend-icon {
+            width: 30px;
+            height: 3px;
+            margin-right: 10px;
+        }
+        
+        .legend-icon.solid {
+            background: currentColor;
+        }
+        
+        .legend-icon.dashed {
+            background: repeating-linear-gradient(
+                to right,
+                currentColor 0,
+                currentColor 8px,
+                transparent 8px,
+                transparent 12px
+            );
+        }
+        
+        /* 矢印のアニメーション */
+        @keyframes dash {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <header class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <h1 class="text-2xl font-bold text-center flex items-center justify-center gap-2">
+                <i class="fas fa-baseball-ball"></i>
+                寺町トンネルズ
+            </h1>
+            <p class="text-center text-sm mt-1 opacity-90">カバーリング・バックアップ学習</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-6">
+        <!-- ログイン画面 -->
+        <div id="loginPage" class="page-section active">
+            <div class="max-w-md mx-auto mt-10">
+                <div class="card">
+                    <div class="text-center mb-6">
+                        <div class="text-6xl mb-3 text-blue-600">
+                            <i class="fas fa-baseball-ball"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-blue-600 mb-2">ようこそ！</h2>
+                        <p class="text-gray-600" id="loginModeText" style="white-space: nowrap;">ニックネームとパスワードを入力してね！</p>
+                    </div>
+                    
+                    <!-- タブ切り替え -->
+                    <div class="flex mb-6 border-b-2 border-gray-200">
+                        <button id="loginTab" class="flex-1 py-3 font-bold text-blue-600 border-b-2 border-blue-600" onclick="switchLoginMode('login')">
+                            <i class="fas fa-sign-in-alt"></i> ログイン
+                        </button>
+                        <button id="registerTab" class="flex-1 py-3 font-bold text-gray-400" onclick="switchLoginMode('register')">
+                            <i class="fas fa-user-plus"></i> 新規登録
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">ニックネーム</label>
+                        <input type="text" id="nicknameInput" autocomplete="off" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none" placeholder="例：たろう">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-bold mb-2">パスワード</label>
+                        <input type="password" id="passwordInput" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none" placeholder="4文字以上">
+                    </div>
+                    
+                    <div id="registerFields" style="display: none;">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-bold mb-2">パスワード（確認）</label>
+                            <input type="password" id="passwordConfirmInput" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none" placeholder="もう一度入力">
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-bold mb-2">ポジション</label>
+                            <select id="positionSelect" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none">
+                                <option value="">選択してください</option>
+                                <option value="1">1. ピッチャー (P)</option>
+                                <option value="2">2. キャッチャー (C)</option>
+                                <option value="3">3. ファースト (1B)</option>
+                                <option value="4">4. セカンド (2B)</option>
+                                <option value="5">5. サード (3B)</option>
+                                <option value="6">6. ショート (SS)</option>
+                                <option value="7">7. レフト (LF)</option>
+                                <option value="8">8. センター (CF)</option>
+                                <option value="9">9. ライト (RF)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button id="loginButton" onclick="handleLogin()" class="btn-primary w-full">
+                        <i class="fas fa-sign-in-alt"></i> ログイン
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学習ページ -->
+        <div id="learningPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+                <i class="fas fa-book-open"></i>
+                カバーリング学習
+            </h2>
+            
+            <div class="bg-blue-50 border-l-4 border-blue-600 p-4 mb-4 rounded">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-lightbulb text-blue-600"></i>
+                    <strong>使い方：</strong>走者状況と打球/プレーを選ぶと、フォーメーション図と各ポジションの役割が自動的に表示されます。
+                </p>
+            </div>
+            
+            <!-- 役割バッジ凡例 -->
+            <div class="card mb-4">
+                <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                    <i class="fas fa-info-circle text-blue-600"></i>
+                    役割バッジの説明
+                </h3>
+                <div class="flex flex-wrap gap-2 text-xs justify-center">
+                    <span class="role-badge role-ball-handler">打球処理</span>
+                    <span class="role-badge role-cover">カバー</span>
+                    <span class="role-badge role-backup">バックアップ</span>
+                    <span class="role-badge role-base-cover">ベースカバー</span>
+                    <span class="role-badge role-wait">待機</span>
+                </div>
+                <p class="text-xs text-gray-600 mt-2">
+                    <i class="fas fa-info-circle"></i> フォーメーション図と各ポジションの役割で確認できます
+                </p>
+            </div>
+            
+            <!-- 走者状況選択 -->
+            <div class="card mb-4">
+                <label class="block text-gray-700 font-bold mb-3 flex items-center gap-2 text-lg">
+                    <i class="fas fa-running text-blue-600"></i>
+                    走者の状況
+                </label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button onclick="selectRunner('none')" class="runner-btn" data-runner="none">
+                        <i class="fas fa-circle text-gray-400"></i>
+                        <div>走者なし</div>
+                    </button>
+                    <button onclick="selectRunner('first')" class="runner-btn" data-runner="first">
+                        <i class="fas fa-user text-blue-500"></i>
+                        <div>一塁</div>
+                    </button>
+                    <button onclick="selectRunner('second')" class="runner-btn" data-runner="second">
+                        <i class="fas fa-user text-blue-500"></i>
+                        <div>二塁</div>
+                    </button>
+                    <button onclick="selectRunner('third')" class="runner-btn" data-runner="third">
+                        <i class="fas fa-user text-blue-500"></i>
+                        <div>三塁</div>
+                    </button>
+                    <button onclick="selectRunner('first_second')" class="runner-btn" data-runner="first_second">
+                        <i class="fas fa-users text-blue-500"></i>
+                        <div>一二塁</div>
+                    </button>
+                    <button onclick="selectRunner('first_third')" class="runner-btn" data-runner="first_third">
+                        <i class="fas fa-users text-blue-500"></i>
+                        <div>一三塁</div>
+                    </button>
+                    <button onclick="selectRunner('second_third')" class="runner-btn" data-runner="second_third">
+                        <i class="fas fa-users text-blue-500"></i>
+                        <div>二三塁</div>
+                    </button>
+                    <button onclick="selectRunner('loaded')" class="runner-btn" data-runner="loaded">
+                        <i class="fas fa-users text-red-500"></i>
+                        <div>満塁</div>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 打球/プレー選択（カテゴリー分類） -->
+            <div class="card mb-4">
+                <!-- 第1段階: カテゴリー選択 -->
+                <label class="block text-gray-700 font-bold mb-3 flex items-center gap-2 text-lg">
+                    <i class="fas fa-layer-group text-blue-600"></i>
+                    打球やプレーの種類
+                </label>
+                <div id="categoryButtonsContainer" class="grid grid-cols-2 gap-3 mb-4">
+                    <p class="col-span-2 text-center text-gray-500 py-4">
+                        <i class="fas fa-arrow-up text-blue-400"></i><br>
+                        まず走者状況を選んでね！
+                    </p>
+                </div>
+                
+                <!-- 第2段階: 守備条件選択（条件がある場合のみ表示） -->
+                <div id="conditionSelectContainer" style="display: none;">
+                    <div class="bg-green-50 border-l-4 border-green-500 p-3 mb-3 rounded">
+                        <p class="text-sm text-green-800">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>守備条件を選んでね！</strong>
+                        </p>
+                    </div>
+                    <label class="block text-gray-700 font-bold mb-3 flex items-center gap-2 text-lg">
+                        <i class="fas fa-shield-alt text-green-600"></i>
+                        守備の体制
+                    </label>
+                    <div id="conditionButtonsContainer" class="grid grid-cols-2 gap-3 mb-4">
+                    </div>
+                </div>
+                
+                <!-- 第3段階: 具体的なパターン選択 -->
+                <div id="patternSelectContainer" style="display: none;">
+                    <label class="block text-gray-700 font-bold mb-3 flex items-center gap-2 text-lg">
+                        <i class="fas fa-baseball-ball text-blue-600"></i>
+                        <span id="categoryName">打球やプレー</span>
+                    </label>
+                    <div id="ballButtonsContainer" class="grid grid-cols-2 gap-3">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 状況表示 -->
+            <div id="situationDisplay" class="situation-card" style="display: none;">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-90">状況</p>
+                        <p class="font-bold text-lg" id="situationText"></p>
+                    </div>
+                    <div class="text-3xl">
+                        <i class="fas fa-baseball-ball"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- グラウンド表示 -->
+            <div class="card">
+                <!-- 画像表示エリア -->
+                <div id="formationImageContainer" class="mb-4" style="display: none;">
+                    <div class="text-center mb-3">
+                        <h3 class="font-bold text-gray-800 flex items-center justify-center gap-2">
+                            <i class="fas fa-image text-blue-600"></i>
+                            フォーメーション図
+                        </h3>
+                    </div>
+                    <div class="flex justify-center mb-3">
+                        <div class="w-full mx-auto" style="max-width: 620px;">
+                            <div class="image-wrapper relative">
+                                <img id="formationImage" src="" alt="フォーメーション図" style="cursor: default; pointer-events: none; display: block;">
+                                <div id="imageLoadingOverlay" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center" style="display: none;">
+                                    <div class="text-gray-600">
+                                        <i class="fas fa-spinner fa-spin text-2xl"></i>
+                                        <p class="mt-2">読み込み中...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="articleLink" class="text-center mt-2 pt-3 border-t border-gray-200" style="display: none;">
+                        <a href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline font-semibold" style="cursor: pointer;">
+                            <i class="fas fa-external-link-alt"></i>
+                            詳しい解説を読む
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- SVGグラウンド図を削除し、画像表示のみを使用 -->
+            </div>
+            
+            <!-- 役割説明 -->
+            <div id="rolesDescription" class="card mt-4" style="display: none;">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-list-alt text-blue-600"></i>
+                    各ポジションの役割
+                </h3>
+                <div id="rolesContent" class="space-y-2 text-sm"></div>
+            </div>
+        </div>
+
+
+
+        <!-- クイズページ -->
+        <div id="quizPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+                <i class="fas fa-question-circle"></i>
+                クイズモード
+            </h2>
+            
+            <div class="bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-600 p-4 mb-4 rounded">
+                <p class="text-sm text-gray-700 mb-2">
+                    <i class="fas fa-lightbulb text-yellow-500"></i>
+                    <strong>1問1答方式：</strong>1問ずつ答えてポイントを獲得しよう！
+                </p>
+                <p class="text-xs text-gray-600 mb-2">
+                    正解：+10pt / 3連続正解：+5ptボーナス / 5連続正解：+15ptボーナス
+                </p>
+                <div class="bg-white p-2 rounded-lg border-2 border-blue-400 mt-3">
+                    <p class="text-sm text-gray-700 text-center">
+                        <i class="fas fa-user-circle text-blue-600"></i>
+                        <strong>現在のポジション：</strong><span id="quizPositionName" class="text-blue-600 font-bold"></span>
+                    </p>
+                    <p class="text-xs text-gray-500 text-center mt-1">このポジションに関する問題が出題されます</p>
+                </div>
+            </div>
+            
+            <div class="text-center mb-4">
+                <button onclick="startQuiz()" class="btn-primary text-lg px-8 py-4">
+                    <i class="fas fa-play-circle"></i> クイズに挑戦！
+                </button>
+            </div>
+            
+            <div id="quizContainer"></div>
+            
+            <!-- クイズ用グラウンド図 -->
+            <div id="quizFieldContainer" class="card mt-4" style="display: none;">
+                <!-- クイズ用グラウンド図（SVG削除、今後は画像表示予定） -->
+                <div id="quizImageContainer" class="mb-4" style="display: none;">
+                    <h3 class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <i class="fas fa-image text-blue-600"></i>
+                        フォーメーション図
+                    </h3>
+                    <div class="flex justify-center mb-3">
+                        <div class="w-full mx-auto" style="max-width: 520px;">
+                            <div class="image-wrapper">
+                                <img id="quizFormationImage" src="" alt="フォーメーション図" style="cursor: default; pointer-events: none; display: block;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-2 pt-3 border-t border-gray-200">
+                        <a id="quizArticleLink" href="" target="_blank" class="text-sm text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-2 font-semibold" style="display: none; cursor: pointer;">
+                            <i class="fas fa-external-link-alt"></i>
+                            詳細な解説を見る
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- クイズフィードバック表示エリア -->
+            <div id="quizFeedbackContainer"></div>
+        </div>
+
+        <!-- マイページ -->
+        <div id="myPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+                <i class="fas fa-user"></i>
+                マイページ
+            </h2>
+            
+            <div class="card mb-4 bg-gradient-to-br from-blue-50 to-blue-100">
+                <div class="text-center mb-4">
+                    <div class="text-5xl mb-2 text-blue-600">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">プロフィール</h3>
+                </div>
+                <div class="space-y-3">
+                    <div class="bg-white p-3 rounded-lg">
+                        <p class="text-sm text-gray-600">ニックネーム</p>
+                        <p id="profileNickname" class="font-bold text-xl text-blue-600"></p>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">ポジション</p>
+                                <p id="profilePosition" class="font-bold text-xl text-blue-600"></p>
+                            </div>
+                            <button onclick="showPositionChange()" class="btn-secondary text-sm px-3 py-1">
+                                <i class="fas fa-exchange-alt"></i> 変更
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ポジション変更モーダル（初期非表示） -->
+            <div id="positionChangeModal" class="card mb-4 bg-yellow-50 border-2 border-yellow-400" style="display: none;">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-exchange-alt text-blue-600"></i>
+                    ポジション変更
+                </h3>
+                <p class="text-sm text-gray-600 mb-3">変更したいポジションを選択してください。各ポジションのデータは個別に保存されます。</p>
+                <select id="newPositionSelect" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg mb-3">
+                    <option value="1">ピッチャー (P)</option>
+                    <option value="2">キャッチャー (C)</option>
+                    <option value="3">ファースト (1B)</option>
+                    <option value="4">セカンド (2B)</option>
+                    <option value="5">サード (3B)</option>
+                    <option value="6">ショート (SS)</option>
+                    <option value="7">レフト (LF)</option>
+                    <option value="8">センター (CF)</option>
+                    <option value="9">ライト (RF)</option>
+                </select>
+                <div class="flex gap-2">
+                    <button onclick="changePosition()" class="btn-primary flex-1">
+                        <i class="fas fa-check"></i> 変更する
+                    </button>
+                    <button onclick="cancelPositionChange()" class="btn-secondary flex-1">
+                        <i class="fas fa-times"></i> キャンセル
+                    </button>
+                </div>
+            </div>
+            
+            <!-- レベルとポイント（現在のポジション） -->
+            <div class="card mb-4 bg-gradient-to-br from-purple-50 to-pink-50">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-star text-yellow-500"></i>
+                    <span id="currentPositionName"></span> のレベル
+                </h3>
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <p class="text-sm text-gray-600">レベル</p>
+                        <p class="text-4xl font-bold text-purple-600">Lv.<span id="userLevel">1</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600">ポイント</p>
+                        <p class="text-2xl font-bold text-pink-600"><span id="userPoints">0</span> pt</p>
+                    </div>
+                </div>
+                <div class="bg-gray-200 rounded-full h-3 overflow-hidden mb-2">
+                    <div id="levelProgress" class="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p class="text-xs text-gray-600 text-center">次のレベルまであと <span id="pointsToNext">100</span>pt</p>
+            </div>
+            
+            <!-- 全ポジション統計 -->
+            <div class="card mb-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-chart-bar text-blue-600"></i>
+                    全ポジション統計
+                </h3>
+                <div id="allPositionsStats" class="space-y-2"></div>
+            </div>
+            
+            <div class="card mb-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-chart-line text-blue-600"></i>
+                    学習記録
+                </h3>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-green-50 p-4 rounded-lg text-center border-2 border-green-200">
+                        <p class="text-sm text-gray-600 mb-1">正解率</p>
+                        <p id="quizAccuracy" class="font-bold text-3xl text-green-600"></p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-lg text-center border-2 border-blue-200">
+                        <p class="text-sm text-gray-600 mb-1">クイズ数</p>
+                        <p id="totalQuizzes" class="font-bold text-3xl text-blue-600"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- バッジコレクション -->
+            <div class="card mb-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-trophy text-yellow-500"></i>
+                    バッジコレクション
+                </h3>
+                <div id="badgesContainer"></div>
+            </div>
+            
+            <!-- パスワード変更 -->
+            <div class="card mb-4">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-key text-blue-600"></i>
+                    パスワード変更
+                </h3>
+                <button onclick="showPasswordChange()" class="btn-secondary w-full">
+                    <i class="fas fa-lock"></i> パスワードを変更する
+                </button>
+            </div>
+            
+            <!-- パスワード変更モーダル（初期非表示） -->
+            <div id="passwordChangeModal" class="card mb-4 bg-red-50 border-2 border-red-400" style="display: none;">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <i class="fas fa-key text-red-600"></i>
+                    パスワード変更
+                </h3>
+                <div class="mb-3">
+                    <label class="block text-gray-700 font-bold mb-2">現在のパスワード</label>
+                    <input type="password" id="currentPasswordInput" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg" placeholder="現在のパスワード">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-gray-700 font-bold mb-2">新しいパスワード</label>
+                    <input type="password" id="newPasswordInput" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg" placeholder="4文字以上">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-gray-700 font-bold mb-2">新しいパスワード（確認）</label>
+                    <input type="password" id="newPasswordConfirmInput" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg" placeholder="もう一度入力">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="changePassword()" class="btn-primary flex-1">
+                        <i class="fas fa-check"></i> 変更する
+                    </button>
+                    <button onclick="cancelPasswordChange()" class="btn-secondary flex-1">
+                        <i class="fas fa-times"></i> キャンセル
+                    </button>
+                </div>
+            </div>
+            
+            <button onclick="logout()" class="btn-secondary w-full">
+                <i class="fas fa-sign-out-alt"></i> ログアウト
+            </button>
+        </div>
+
+        <!-- 管理者ページ -->
+        <div id="adminPage" class="page-section">
+            <h2 class="text-2xl font-bold text-blue-600 mb-4 flex items-center gap-2">
+                <i class="fas fa-user-shield"></i>
+                管理者ページ
+            </h2>
+            
+            <div id="adminLogin" class="card">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">管理者認証</h3>
+                <input type="password" id="adminPassword" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg mb-3" placeholder="パスワードを入力">
+                <button onclick="adminLogin()" class="btn-primary w-full">
+                    <i class="fas fa-unlock"></i> ログイン
+                </button>
+            </div>
+            
+            <div id="adminContent" style="display: none;">
+                <!-- チーム統計ダッシュボード -->
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <!-- 総登録者数 -->
+                    <div class="card bg-gradient-to-br from-blue-50 to-blue-100">
+                        <div class="flex items-center gap-3">
+                            <div class="text-3xl text-blue-600">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">総登録者数</p>
+                                <p class="text-2xl font-bold text-blue-600"><span id="totalUsers">0</span>名</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- アクティブユーザー数 -->
+                    <div class="card bg-gradient-to-br from-green-50 to-green-100">
+                        <div class="flex items-center gap-3">
+                            <div class="text-3xl text-green-600">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">アクティブ</p>
+                                <p class="text-2xl font-bold text-green-600"><span id="activeUsers">0</span>名</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 平均レベル -->
+                    <div class="card bg-gradient-to-br from-purple-50 to-purple-100">
+                        <div class="flex items-center gap-3">
+                            <div class="text-3xl text-purple-600">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">平均レベル</p>
+                                <p class="text-2xl font-bold text-purple-600">Lv <span id="avgLevel">0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 平均正解率 -->
+                    <div class="card bg-gradient-to-br from-orange-50 to-orange-100">
+                        <div class="flex items-center gap-3">
+                            <div class="text-3xl text-orange-600">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600">平均正解率</p>
+                                <p class="text-2xl font-bold text-orange-600"><span id="avgAccuracy">0</span>%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- フィルター＆ソート -->
+                <div class="card mb-4">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <select id="positionFilter" class="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm">
+                            <option value="all">全ポジション</option>
+                            <option value="ピッチャー">ピッチャー</option>
+                            <option value="キャッチャー">キャッチャー</option>
+                            <option value="ファースト">ファースト</option>
+                            <option value="セカンド">セカンド</option>
+                            <option value="サード">サード</option>
+                            <option value="ショート">ショート</option>
+                            <option value="レフト">レフト</option>
+                            <option value="センター">センター</option>
+                            <option value="ライト">ライト</option>
+                        </select>
+                        
+                        <select id="sortBy" class="px-3 py-2 border-2 border-gray-300 rounded-lg text-sm">
+                            <option value="level">レベル順</option>
+                            <option value="accuracy">正解率順</option>
+                            <option value="lastLogin">最終ログイン順</option>
+                            <option value="name">ニックネーム順</option>
+                        </select>
+                        
+                        <button onclick="applyFilters()" class="btn-primary text-sm px-4 py-2">
+                            <i class="fas fa-filter"></i> 適用
+                        </button>
+                        
+                        <button onclick="exportCSV()" class="btn-secondary text-sm px-4 py-2 ml-auto">
+                            <i class="fas fa-download"></i> CSV出力
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- ユーザー進捗一覧テーブル -->
+                <div class="card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-table text-blue-600"></i>
+                        選手一覧
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-3 py-2 text-left">ニックネーム</th>
+                                    <th class="px-3 py-2 text-left">ポジション</th>
+                                    <th class="px-3 py-2 text-center">Lv</th>
+                                    <th class="px-3 py-2 text-center">ポイント</th>
+                                    <th class="px-3 py-2 text-center">正解数</th>
+                                    <th class="px-3 py-2 text-center">正解率</th>
+                                    <th class="px-3 py-2 text-center">バッジ</th>
+                                    <th class="px-3 py-2 text-center">最終ログイン</th>
+                                    <th class="px-3 py-2 text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userProgressTable">
+                                <tr>
+                                    <td colspan="9" class="px-3 py-8 text-center text-gray-500">
+                                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                        <p>読み込み中...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 選手詳細モーダル -->
+        <div id="playerDetailModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style="display: none; z-index: 9999;">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-user-circle text-blue-600"></i>
+                        <span id="modalPlayerName">選手詳細</span>
+                    </h3>
+                    <button onclick="closePlayerDetail()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="p-4">
+                    <!-- 基本情報 -->
+                    <div class="card mb-4 bg-gradient-to-br from-blue-50 to-blue-100">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <p class="text-xs text-gray-600 mb-1">現在のポジション</p>
+                                <p class="font-bold text-blue-600" id="modalPosition">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600 mb-1">レベル</p>
+                                <p class="font-bold text-blue-600" id="modalLevel">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600 mb-1">総ポイント</p>
+                                <p class="font-bold text-blue-600" id="modalPoints">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-600 mb-1">正解率</p>
+                                <p class="font-bold text-blue-600" id="modalAccuracy">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 全ポジション統計 -->
+                    <div class="card mb-4">
+                        <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="fas fa-baseball-ball text-blue-600"></i>
+                            全ポジション統計
+                        </h4>
+                        <div id="modalAllPositions" class="space-y-2 text-sm">
+                            <!-- JavaScriptで動的生成 -->
+                        </div>
+                    </div>
+                    
+                    <!-- 獲得バッジ -->
+                    <div class="card">
+                        <h4 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                            <i class="fas fa-trophy text-yellow-600"></i>
+                            獲得バッジ（<span id="modalBadgeCount">0</span>個）
+                        </h4>
+                        <div id="modalBadges" class="grid grid-cols-3 gap-2">
+                            <!-- JavaScriptで動的生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="switchPage('learning')">
+            <div class="text-2xl"><i class="fas fa-book"></i></div>
+            <div class="text-xs mt-1">学習</div>
+        </div>
+        <div class="nav-item" onclick="switchPage('quiz')">
+            <div class="text-2xl"><i class="fas fa-question-circle"></i></div>
+            <div class="text-xs mt-1">クイズ</div>
+        </div>
+        <div class="nav-item" onclick="switchPage('my')">
+            <div class="text-2xl"><i class="fas fa-user"></i></div>
+            <div class="text-xs mt-1">マイページ</div>
+        </div>
+    </nav>
+
+    <script src="data.js"></script>
+<script src="data_with_images.js"></script>
+<script src="data_runner_first.js"></script>
+<script src="data_all_patterns.js"></script>
+<script src="data_pattern_categories.js"></script>
+    <script src="app.js"></script>
+<script src="app_password.js"></script>
+</body>
+</html>
